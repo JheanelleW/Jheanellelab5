@@ -1,0 +1,156 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Count Regression: Poisson, Negative Binomial, and Probing Interactions",
+    "section": "",
+    "text": "These data come from the NMES1988 dataset in the AER package, which contains 4,406 adults aged 66 and older from the 1987 to 1988 US National Medical Expenditure Survey. The outcome is visits, the number of physician office visits. The analysis uses five predictors, described below. The reference groups are average for self-perceived health, male for gender, and no for private insurance.\n\n\n\n\n\n\n\n\nVariable\nDescription\nRole\n\n\n\n\nvisits\nNumber of physician office visits\nOutcome\n\n\nchronic\nNumber of chronic conditions\nPredictor\n\n\nhealth\nSelf-perceived health: poor, average, or excellent (reference: average)\nPredictor\n\n\ngender\nMale or female (reference: male)\nPredictor\n\n\nschool\nYears of education\nPredictor\n\n\ninsurance\nCovered by private insurance: no or yes (reference: no)\nPredictor\n\n\n\n\n\n\n\n\n\n\nTable 1: Descriptive statistics for the number of physician office visits\n\n\n\n\n\n\n\n\n\nn\nMean\nVariance\nProportion of zeros\nMaximum\n\n\n\n\n4,406\n5.77\n45.69\n0.155\n89\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nFigure 1: Distribution of the number of physician office visits (counts above 40 are not shown)\n\n\n\n\n\n\n\n\nThe outcome, visits, is a count: it takes only whole numbers and cannot be below zero. Across the 4,406 adults, the mean number of visits was 5.77 and the variance was 45.69, which is about 7.9 times the mean. A Poisson model assumes that the variance equals the mean, so this gap points to overdispersion. About 15.5% of people had no visits at all. The distribution has a long right tail, with a maximum of 89 visits, and 25 people (0.6%) had more than 40 visits. These unusually large counts are one reason to expect that a simple Poisson model may not fit well."
+  },
+  {
+    "objectID": "index.html#the-data",
+    "href": "index.html#the-data",
+    "title": "Count Regression: Poisson, Negative Binomial, and Probing Interactions",
+    "section": "",
+    "text": "These data come from the NMES1988 dataset in the AER package, which contains 4,406 adults aged 66 and older from the 1987 to 1988 US National Medical Expenditure Survey. The outcome is visits, the number of physician office visits. The analysis uses five predictors, described below. The reference groups are average for self-perceived health, male for gender, and no for private insurance.\n\n\n\n\n\n\n\n\nVariable\nDescription\nRole\n\n\n\n\nvisits\nNumber of physician office visits\nOutcome\n\n\nchronic\nNumber of chronic conditions\nPredictor\n\n\nhealth\nSelf-perceived health: poor, average, or excellent (reference: average)\nPredictor\n\n\ngender\nMale or female (reference: male)\nPredictor\n\n\nschool\nYears of education\nPredictor\n\n\ninsurance\nCovered by private insurance: no or yes (reference: no)\nPredictor"
+  },
+  {
+    "objectID": "index.html#describing-the-outcome",
+    "href": "index.html#describing-the-outcome",
+    "title": "Count Regression: Poisson, Negative Binomial, and Probing Interactions",
+    "section": "",
+    "text": "Table 1: Descriptive statistics for the number of physician office visits\n\n\n\n\n\n\n\n\n\nn\nMean\nVariance\nProportion of zeros\nMaximum\n\n\n\n\n4,406\n5.77\n45.69\n0.155\n89\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nFigure 1: Distribution of the number of physician office visits (counts above 40 are not shown)"
+  },
+  {
+    "objectID": "index.html#exploratory-patterns",
+    "href": "index.html#exploratory-patterns",
+    "title": "Count Regression: Poisson, Negative Binomial, and Probing Interactions",
+    "section": "",
+    "text": "The outcome, visits, is a count: it takes only whole numbers and cannot be below zero. Across the 4,406 adults, the mean number of visits was 5.77 and the variance was 45.69, which is about 7.9 times the mean. A Poisson model assumes that the variance equals the mean, so this gap points to overdispersion. About 15.5% of people had no visits at all. The distribution has a long right tail, with a maximum of 89 visits, and 25 people (0.6%) had more than 40 visits. These unusually large counts are one reason to expect that a simple Poisson model may not fit well."
+  },
+  {
+    "objectID": "index.html#why-not-a-linear-model",
+    "href": "index.html#why-not-a-linear-model",
+    "title": "Count Regression: Poisson, Negative Binomial, and Probing Interactions",
+    "section": "Why not a linear model?",
+    "text": "Why not a linear model?\n\n\n\n\n\n\n\n\nFigure 2: DHARMa QQ plot of simulated residuals for the Gaussian model\n\n\n\n\n\n\n\n\n\n\n\n\n\nFigure 3: DHARMa residuals against model predictions for the Gaussian model\n\n\n\n\n\n\n\n\n\nTable 2: DHARMa tests on the Gaussian model\n\n\n\n\n\n\n\n\n\nTest\nStatistic\np\n\n\n\n\nUniformity of residuals (KS)\n0.148\n&lt; .001\n\n\nDispersion\n1.001\n0.960\n\n\nOutliers\n61.000\n&lt; .001\n\n\n\n\n\n\n\n\n\n\nA linear model is a poor choice for the number of physician visits. The DHARMa plots show that the simulated residuals from the Gaussian model do not behave as they should: the QQ plot departs from the diagonal,the formal tests in the table above flag deviations, and the residuals against the predicted values show structure instead of a flat, even spread. These departures appear because the model’s assumptions do not match the data. A Gaussian model treats the outcome as continuous, so it can predict a negative number of visits, which is impossible. It also assumes that the variance is the same at every level of the predictors, yet for counts the variance grows with the mean, so people who are expected to visit often are also the most variable. It treats each predictor as adding a fixed number of visits, whereas for counts it is more natural for a predictor to multiply the expected number of visits. Finally, it ignores that the outcome is made up of whole numbers, with a spike at zero and a long right tail."
+  },
+  {
+    "objectID": "index.html#three-nested-poisson-models",
+    "href": "index.html#three-nested-poisson-models",
+    "title": "Count Regression: Poisson, Negative Binomial, and Probing Interactions",
+    "section": "Three nested Poisson models",
+    "text": "Three nested Poisson models\nWe will estimate three nested Poisson models with a log link:\n\n\n\n\n\n\n\n\nModel\nPredictors\nPurpose\n\n\n\n\nM0: Null\nIntercept only\nBaseline model\n\n\nM1: Chronic\nchronic\nEvaluate the number of chronic conditions\n\n\nM2: Full\nchronic, health, gender, school, insurance\nAdditional contribution of the remaining predictors"
+  },
+  {
+    "objectID": "index.html#interpreting-the-comparison",
+    "href": "index.html#interpreting-the-comparison",
+    "title": "Count Regression: Poisson, Negative Binomial, and Probing Interactions",
+    "section": "Interpreting the comparison",
+    "text": "Interpreting the comparison\nEach likelihood-ratio test compares a model with the one before it. Adding the number of chronic conditions to the null model significantly improved fit (χ²(1) = 2175.4, p &lt; .001), which tells us that chronic conditions are associated with the number of physician visits. Adding health, gender, education, and insurance to M1 also significantly improved fit (χ²(5) = 959.9, p &lt; .001), so these predictors together explain additional variation beyond chronic conditions. I selected M2, the full Poisson model, because it had the lowest AIC (36,597.0) and BIC (36,641.7) and because both tests supported adding predictors. This selection is provisional: it assumes that a Poisson model is appropriate, which I check next."
+  },
+  {
+    "objectID": "index.html#simulated-residuals",
+    "href": "index.html#simulated-residuals",
+    "title": "Count Regression: Poisson, Negative Binomial, and Probing Interactions",
+    "section": "Simulated residuals",
+    "text": "Simulated residuals\n\n\n\n\n\n\n\n\nFigure 4: DHARMa QQ plot of simulated residuals for the full Poisson model\n\n\n\n\n\n\n\n\n\n\n\n\n\nFigure 5: DHARMa residuals against model predictions for the full Poisson model"
+  },
+  {
+    "objectID": "index.html#tests-for-overdispersion-and-excess-zeros",
+    "href": "index.html#tests-for-overdispersion-and-excess-zeros",
+    "title": "Count Regression: Poisson, Negative Binomial, and Probing Interactions",
+    "section": "Tests for overdispersion and excess zeros",
+    "text": "Tests for overdispersion and excess zeros\n\n\n\n\nTable 4: DHARMa tests on the full Poisson model\n\n\n\n\n\n\n\n\n\nTest\nStatistic\np\n\n\n\n\nDispersion ratio\n7.25\n&lt; .001\n\n\nObserved / expected zeros\n15.03\n&lt; .001"
+  },
+  {
+    "objectID": "index.html#interpreting-the-poisson-diagnostics",
+    "href": "index.html#interpreting-the-poisson-diagnostics",
+    "title": "Count Regression: Poisson, Negative Binomial, and Probing Interactions",
+    "section": "Interpreting the Poisson diagnostics",
+    "text": "Interpreting the Poisson diagnostics\nThe DHARMa plots suggest that the Poisson model does not fit these data well. The simulated residuals depart from the diagonal in the QQ plot, and the residuals against the predicted values show structure instead of a flat, even spread. The dispersion ratio was 7.25 (p &lt; .001), which means the observed variance was about that many times larger than the Poisson model expects. The observed number of zeros was 15.03 times the number the model expects (p &lt; .001).\nOverdispersion matters because the Poisson model assumes that the variance equals the mean. When the real variance is larger, the model underestimates the uncertainty in its estimates, so the standard errors are too small, the confidence intervals are too narrow, and the p-values are too small. Predictors can then look more convincing than the data justify.\nI should not move straight to a zero-inflated model on the basis of this zero-inflation test alone, because overdispersion by itself produces extra zeros relative to a Poisson. A Poisson model with the same mean has a thinner spread of counts, so it expects fewer zeros than an overdispersed outcome produces. The apparent excess of zeros may therefore disappear once the model allows for extra variance. The sensible order is to address overdispersion first with a negative binomial model, and then test again whether any excess of zeros remains."
+  },
+  {
+    "objectID": "index.html#estimate-the-nb2-model",
+    "href": "index.html#estimate-the-nb2-model",
+    "title": "Count Regression: Poisson, Negative Binomial, and Probing Interactions",
+    "section": "Estimate the NB2 model",
+    "text": "Estimate the NB2 model"
+  },
+  {
+    "objectID": "index.html#compare-the-poisson-and-the-nb2",
+    "href": "index.html#compare-the-poisson-and-the-nb2",
+    "title": "Count Regression: Poisson, Negative Binomial, and Probing Interactions",
+    "section": "Compare the Poisson and the NB2",
+    "text": "Compare the Poisson and the NB2\n\n\n\n\nTable 5: Likelihood-ratio test comparing the Poisson and negative binomial models\n\n\n\n\n\n\n\n\n\nModel\nAIC\nBIC\nlogLik\nχ²\ndf\np\n\n\n\n\nPoisson (M2)\n36,596.99\n36,641.72\n−18,291.49\n—\n—\n—\n\n\nNegative binomial (NB2)\n24,469.91\n24,521.03\n−12,226.95\n12,129.08\n1\n&lt; .001\n\n\n\n\n\n\n\n\n\n\nThe negative binomial model fit significantly better than the Poisson model, χ²(1) = 12,129.1, p &lt; .001. The test has 1 degree of freedom because the NB2 differs from the Poisson by exactly one parameter: the dispersion parameter, which lets the variance exceed the mean. The Poisson is the special case in which that extra variance is zero.\nThe comparison changes how the Poisson results should be read. Allowing for overdispersion made the standard errors about 2.5 times larger on average than under the Poisson model, which means the Poisson model was overstating how precisely the associations were estimated. None of the predictors changed from significant to non-significant, so the conclusions about the direction of the associations were stable, even though the uncertainty was larger. In other words, the conclusions I would have drawn from the Poisson model were too confident, even where they were not wrong."
+  },
+  {
+    "objectID": "index.html#re-check-the-nb2-with-dharma",
+    "href": "index.html#re-check-the-nb2-with-dharma",
+    "title": "Count Regression: Poisson, Negative Binomial, and Probing Interactions",
+    "section": "Re-check the NB2 with DHARMa",
+    "text": "Re-check the NB2 with DHARMa\n\n\n\n\n\n\n\n\nFigure 6: DHARMa QQ plot of simulated residuals for the negative binomial model\n\n\n\n\n\n\n\n\n\n\n\n\n\nFigure 7: DHARMa residuals against model predictions for the negative binomial model\n\n\n\n\n\n\n\n\n\nTable 6: DHARMa tests on the negative binomial model\n\n\n\n\n\n\n\n\n\nTest\nStatistic\np\n\n\n\n\nDispersion ratio\n1.04\n0.428\n\n\nObserved / expected zeros\n1.10\n0.008\n\n\n\n\n\n\n\n\n\n\nThe negative binomial model resolved the overdispersion. The dispersion ratio fell from 7.25 under the Poisson model to 1.04 (p = .428), which is close to 1 and not significant. The residual plots also improved: the QQ plot now follows the diagonal closely, although the plot of residuals against predictions still shows some mild curvature in the quantile lines. One problem remains. The ratio of observed to expected zeros fell from 15.03 to 1.1, but it is still significantly different from 1 (p = .008), which means that the NB2 still produces somewhat fewer zeros than were observed. The excess is small, about 10% more zeros than expected, but because the test is significant I examine in the next section whether the zeros need their own model."
+  },
+  {
+    "objectID": "index.html#visualize-predicted-counts",
+    "href": "index.html#visualize-predicted-counts",
+    "title": "Count Regression: Poisson, Negative Binomial, and Probing Interactions",
+    "section": "Visualize predicted counts",
+    "text": "Visualize predicted counts\n\n\n\n\n\n\n\n\nFigure 8: Predicted number of physician visits by number of chronic conditions (negative binomial model)\n\n\n\n\n\nThe line curves upward even though the model is linear in its predictors. This is the effect of the log link: each additional chronic condition adds a constant amount on the log scale, which multiplies the expected number of visits by a constant factor. The same one-condition increase therefore adds more visits when the expected count is already high than when it is low."
+  },
+  {
+    "objectID": "index.html#re-check-the-chosen-model",
+    "href": "index.html#re-check-the-chosen-model",
+    "title": "Count Regression: Poisson, Negative Binomial, and Probing Interactions",
+    "section": "Re-check the chosen model",
+    "text": "Re-check the chosen model\n\n\n\n\n\n\n\n\nFigure 9: DHARMa QQ plot of simulated residuals for the hurdle negative binomial model\n\n\n\n\n\n\n\n\n\n\n\n\n\nFigure 10: DHARMa residuals against model predictions for the hurdle negative binomial model"
+  },
+  {
+    "objectID": "index.html#justifying-the-choice",
+    "href": "index.html#justifying-the-choice",
+    "title": "Count Regression: Poisson, Negative Binomial, and Probing Interactions",
+    "section": "Justifying the choice",
+    "text": "Justifying the choice\nI carry the hurdle negative binomial model forward. The DHARMa zero-inflation test showed that the NB2 still produced fewer zeros than observed (observed/expected = 1.1, p = .008), so the zeros needed their own process. The ZINB fit significantly better than the NB2 (χ²(7) = 143.1, p &lt; .001). AIC and BIC agreed that the hurdle model was best of the three: its AIC was 24,330.4 compared with 24,340.8 for the ZINB and 24,469.9 for the NB2, and its BIC was 24,426.3 compared with 24,436.6 and 24,521.0. The hurdle model reproduced the observed zeros (observed/expected = 1, p = 1.000), and the ZINB did so as well (0.96, p = .172), so the choice between them rests on AIC and BIC. The hurdle model also has a natural interpretation for physician visits: one part asks whether a person had any visit at all, and the other asks how many visits they made among those who did. One caution is that the dispersion tests were slightly significant for both zero models (hurdle ratio = 1.15, p = .004), although the ratios are close to 1 and a test on 4,406 observations can flag small departures. I treat this as a minor limitation and not as a reason to prefer the NB2, which cannot reproduce the zeros."
+  },
+  {
+    "objectID": "index.html#prediction",
+    "href": "index.html#prediction",
+    "title": "Count Regression: Poisson, Negative Binomial, and Probing Interactions",
+    "section": "Prediction",
+    "text": "Prediction\nI predicted that the association between the number of chronic conditions and physician visits would be stronger for people with private insurance than for people without it. Private insurance lowers the cost of seeing a doctor, so insured people with more chronic conditions should find it easier to turn their health needs into additional visits, whereas people without private insurance may limit their visits even when they have many conditions. I therefore expected a steeper positive slope of chronic conditions for the insured group."
+  },
+  {
+    "objectID": "index.html#fit-the-interaction-model",
+    "href": "index.html#fit-the-interaction-model",
+    "title": "Count Regression: Poisson, Negative Binomial, and Probing Interactions",
+    "section": "Fit the interaction model",
+    "text": "Fit the interaction model\nThe interaction is added to the count part of the hurdle model, so it concerns the number of visits among people who made at least one visit. The zero part keeps all five predictors as additive controls."
+  },
+  {
+    "objectID": "index.html#test-whether-the-interaction-is-needed",
+    "href": "index.html#test-whether-the-interaction-is-needed",
+    "title": "Count Regression: Poisson, Negative Binomial, and Probing Interactions",
+    "section": "Test whether the interaction is needed",
+    "text": "Test whether the interaction is needed\nA likelihood-ratio test comparing the additive hurdle model with the interaction model gave χ²(1) = 0.34, p = .559. The interaction did not significantly improve model fit.\nThis omnibus test only tells us whether the slope of chronic conditions differs by insurance status. It does not tell us how large the slope is in each group, whether each slope is different from zero, or at what numbers of chronic conditions the groups differ. Probing the interaction answers those questions."
+  },
+  {
+    "objectID": "index.html#plot-predicted-counts",
+    "href": "index.html#plot-predicted-counts",
+    "title": "Count Regression: Poisson, Negative Binomial, and Probing Interactions",
+    "section": "Plot predicted counts",
+    "text": "Plot predicted counts\n\n\n\n\n\n\n\n\nFigure 11: Predicted physician visits by number of chronic conditions and private insurance status (hurdle negative binomial, count part)"
+  },
+  {
+    "objectID": "index.html#probe-the-interaction-with-emmeans",
+    "href": "index.html#probe-the-interaction-with-emmeans",
+    "title": "Count Regression: Poisson, Negative Binomial, and Probing Interactions",
+    "section": "Probe the interaction with emmeans",
+    "text": "Probe the interaction with emmeans\n\nSimple slopes\n\n\n\n\nTable 9: Simple slopes of chronic conditions within each insurance group (log scale)\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nPrivate insurance\nSlope (b)\nSE\n\n95% CI\n\np\n\n\nLower\nUpper\n\n\n\n\nno\n0.160\n0.025\n0.111\n0.208\n&lt; .001\n\n\nyes\n0.143\n0.014\n0.115\n0.172\n&lt; .001\n\n\n\n\n\n\n\n\n\n\nComparing the two slopes with pairs() gave a difference of 0.016 (SE = 0.028, p = .560). This reproduces the interaction coefficient from the model (-0.016, SE = 0.028, p = .560) with the sign flipped, because pairs() computes the slope for people without insurance minus the slope for people with insurance, whereas the coefficient is the extra slope for people with insurance. The two tests answer the same question when the moderator has only two levels, because the difference between the two slopes is exactly the interaction coefficient. The small difference between the p-value here and the likelihood-ratio p-value above arises because pairs() uses a Wald z-test and the omnibus test is a likelihood-ratio test.\n\n\nSimple effects\n\n\n\n\nTable 10: Predicted physician visits (emmeans) by insurance status and number of chronic conditions\n\n\n\n\n\n\n\n\n\nPrivate insurance\nChronic conditions\nPredicted visits\nSE\n\n\n\n\nno\n0.19\n4.04\n0.25\n\n\nyes\n0.19\n4.73\n0.17\n\n\nno\n1.54\n5.01\n0.23\n\n\nyes\n1.54\n5.74\n0.17\n\n\nno\n2.89\n6.21\n0.31\n\n\nyes\n2.89\n6.96\n0.23\n\n\n\n\n\n\n\n\n\n\nThe predicted counts from emmeans can differ slightly from the plot above. The plot holds the other predictors at their reference levels or means (average health, male, and mean education), whereas emmeans averages across the levels of health and gender. Both are valid, but they describe slightly different baselines. The contrasts between the insurance groups are the same either way, because no interaction involves health, gender, or education, so their effects cancel out of the comparison on the log scale."
+  },
+  {
+    "objectID": "index.html#simple-effects-table",
+    "href": "index.html#simple-effects-table",
+    "title": "Count Regression: Poisson, Negative Binomial, and Probing Interactions",
+    "section": "Simple effects table",
+    "text": "Simple effects table\n\n\n\n\nTable 11: Simple effects of private insurance at low, average, and high numbers of chronic conditions\n\n\n\n\n\n\n\n\n\nChronic conditions\nContrast\nLog contrast\nSE\nz\np\n\n\n\n\n-1 SD\nno - yes\n−0.158\n0.065\n−2.450\n0.014\n\n\nMean\nno - yes\n−0.136\n0.045\n−3.055\n0.002\n\n\n+1 SD\nno - yes\n−0.114\n0.052\n−2.199\n0.028\n\n\n\nContrasts are no insurance minus insurance. Tests are computed on the log scale."
+  }
+]
