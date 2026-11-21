@@ -322,11 +322,11 @@ pois_tests |>
 
 ## Interpreting the Poisson diagnostics
 
-The DHARMa plots suggest that the Poisson model does not fit these data well. The simulated residuals depart from the diagonal in the QQ plot, and the residuals against the predicted values show structure instead of a flat, even spread. The dispersion ratio was `r round(disp_pois$statistic, 2)` (p `r fmt_p(disp_pois$p.value)`), which means the observed variance was about that many times larger than the Poisson model expects. The observed number of zeros was `r round(zi_pois$statistic, 2)` times the number the model expects (p `r fmt_p(zi_pois$p.value)`).
+The DHARMa diagnostic plots suggest that the Poisson model does not fit the data well. The simulated residuals deviate from the diagonal in the Q-Q plot, and the residuals plotted against predicted values show a pattern rather than an even spread. The dispersion ratio was `r round(disp_pois$statistic, 2)` (*p* `r fmt_p(disp_pois$p.value)`), indicating substantial overdispersion relative to what the Poisson model expects. In addition, the observed number of zeros was `r round(zi_pois$statistic, 2)` times the number expected by the model (*p* `r fmt_p(zi_pois$p.value)`).
 
-Overdispersion matters because the Poisson model assumes that the variance equals the mean. When the real variance is larger, the model underestimates the uncertainty in its estimates, so the standard errors are too small, the confidence intervals are too narrow, and the p-values are too small. Predictors can then look more convincing than the data justify.
+Overdispersion is a concern because the Poisson model assumes that the variance equals the mean. When the observed variability is greater than expected, the model underestimates the uncertainty in its estimates, which produces standard errors that are too small, confidence intervals that are too narrow, and potentially misleading *p*-values. Consequently, predictors may appear more statistically significant than the data support.
 
-I should not move straight to a zero-inflated model on the basis of this zero-inflation test alone, because overdispersion by itself produces extra zeros relative to a Poisson. A Poisson model with the same mean has a thinner spread of counts, so it expects fewer zeros than an overdispersed outcome produces. The apparent excess of zeros may therefore disappear once the model allows for extra variance. The sensible order is to address overdispersion first with a negative binomial model, and then test again whether any excess of zeros remains.
+However, a significant zero-inflation test does not necessarily mean that a zero-inflated model is needed. Overdispersion can also produce more zeros than a Poisson model predicts, so the apparent excess of zeros may be explained by the greater variability in the data. It is therefore more appropriate to first address overdispersion with a negative binomial (NB2) model, which allows the variance to exceed the mean. The diagnostic tests can then be repeated to determine whether excess zeros remain after accounting for overdispersion.
 
 # 5. Fit and evaluate a negative binomial model
 
@@ -443,7 +443,7 @@ nb_tests |>
   fmt(columns = p, fns = function(x) ifelse(x < .001, "< .001", sprintf("%.3f", x)))
 ```
 
-The negative binomial model resolved the overdispersion. The dispersion ratio fell from `r round(disp_pois$statistic, 2)` under the Poisson model to `r round(disp_nb$statistic, 2)` (p `r fmt_p(disp_nb$p.value)`), which is close to 1 and not significant. The residual plots also improved: the QQ plot now follows the diagonal closely, although the plot of residuals against predictions still shows some mild curvature in the quantile lines. One problem remains. The ratio of observed to expected zeros fell from `r round(zi_pois$statistic, 2)` to `r round(zi_nb$statistic, 2)`, but it is still significantly different from 1 (p `r fmt_p(zi_nb$p.value)`), which means that the NB2 still produces somewhat fewer zeros than were observed. The excess is small, about `r round((zi_nb$statistic - 1) * 100)`% more zeros than expected, but because the test is significant I examine in the next section whether the zeros need their own model.
+The negative binomial model resolved the overdispersion. The dispersion ratio fell from `r round(disp_pois$statistic, 2)` under the Poisson model to `r round(disp_nb$statistic, 2)` (p `r fmt_p(disp_nb$p.value)`), which is close to 1 and not significant. The residual plots also improved: the QQ plot now follows the diagonal closely, although the plot of residuals against predictions still shows some mild curvature in the quantile lines. One problem remains. The ratio of observed to expected zeros fell from `r round(zi_pois$statistic, 2)` to `r sprintf("%.2f", zi_nb$statistic)`, but it is still significantly different from 1 (p `r fmt_p(zi_nb$p.value)`), which means that the NB2 still produces somewhat fewer zeros than were observed. The excess is small, about `r round((zi_nb$statistic - 1) * 100)`% more zeros than expected, but because the test is significant I examine in the next section whether the zeros need their own model.
 
 ## Visualize predicted counts
 
@@ -586,7 +586,7 @@ plotResiduals(res_hurdle)
 
 ## Justifying the choice
 
-I carry the hurdle negative binomial model forward. The DHARMa zero-inflation test showed that the NB2 still produced fewer zeros than observed (observed/expected = `r round(zi_nb$statistic, 2)`, p `r fmt_p(zi_nb$p.value)`), so the zeros needed their own process. The ZINB fit significantly better than the NB2 (χ²(`r zinb_df`) = `r format(round(zinb_chisq, 1), big.mark = ",", nsmall = 1)`, p `r fmt_p(zinb_p)`). AIC and BIC agreed that the hurdle model was best of the three: its AIC was `r format(round(zero_models$AIC[3], 1), big.mark = ",", nsmall = 1)` compared with `r format(round(zero_models$AIC[2], 1), big.mark = ",", nsmall = 1)` for the ZINB and `r format(round(zero_models$AIC[1], 1), big.mark = ",", nsmall = 1)` for the NB2, and its BIC was `r format(round(zero_models$BIC[3], 1), big.mark = ",", nsmall = 1)` compared with `r format(round(zero_models$BIC[2], 1), big.mark = ",", nsmall = 1)` and `r format(round(zero_models$BIC[1], 1), big.mark = ",", nsmall = 1)`. The hurdle model reproduced the observed zeros (observed/expected = `r round(zi_hurdle$statistic, 2)`, p `r fmt_p(zi_hurdle$p.value)`), and the ZINB did so as well (`r round(zi_zinb$statistic, 2)`, p `r fmt_p(zi_zinb$p.value)`), so the choice between them rests on AIC and BIC. The hurdle model also has a natural interpretation for physician visits: one part asks whether a person had any visit at all, and the other asks how many visits they made among those who did. One caution is that the dispersion tests were slightly significant for both zero models (hurdle ratio = `r round(disp_hurdle$statistic, 2)`, p `r fmt_p(disp_hurdle$p.value)`), although the ratios are close to 1 and a test on `r format(n, big.mark = ",")` observations can flag small departures. I treat this as a minor limitation and not as a reason to prefer the NB2, which cannot reproduce the zeros.
+I selected the hurdle negative binomial model to carry forward. The DHARMa zero-inflation test showed that the NB2 still produced fewer zeros than observed (observed/expected = `r round(zi_nb$statistic, 2)`, p `r fmt_p(zi_nb$p.value)`), so the zeros needed to be modelled separately.The ZINB fit significantly better than the NB2 (χ²(`r zinb_df`) = `r format(round(zinb_chisq, 1), big.mark = ",", nsmall = 1)`, p `r fmt_p(zinb_p)`). AIC and BIC agreed that the hurdle model was best of the three: its AIC was `r format(round(zero_models$AIC[3], 1), big.mark = ",", nsmall = 1)` compared with `r format(round(zero_models$AIC[2], 1), big.mark = ",", nsmall = 1)` for the ZINB and `r format(round(zero_models$AIC[1], 1), big.mark = ",", nsmall = 1)` for the NB2, and its BIC was `r format(round(zero_models$BIC[3], 1), big.mark = ",", nsmall = 1)` compared with `r format(round(zero_models$BIC[2], 1), big.mark = ",", nsmall = 1)` and `r format(round(zero_models$BIC[1], 1), big.mark = ",", nsmall = 1)`. The hurdle model reproduced the observed zeros (observed/expected = `r sprintf("%.2f", zi_hurdle$statistic)`, p `r fmt_p(zi_hurdle$p.value)`), and the ZINB did so as well (`r round(zi_zinb$statistic, 2)`, p `r fmt_p(zi_zinb$p.value)`), so the choice between them rests on AIC and BIC. The hurdle model also has a natural interpretation for physician visits: one part asks whether a person had any visit at all, and the other asks how many visits they made among those who did. One caution is that the dispersion tests were slightly significant for both zero models (hurdle ratio = `r round(disp_hurdle$statistic, 2)`, p `r fmt_p(disp_hurdle$p.value)`), although the ratios are close to 1 and a test on `r format(n, big.mark = ",")` observations can flag small departures. I treat this as a minor limitation and not as a reason to prefer the NB2, which cannot reproduce the zeros.
 
 # 7. Test and probe an interaction
 
@@ -594,7 +594,7 @@ I carry the hurdle negative binomial model forward. The DHARMa zero-inflation te
 
 ## Prediction
 
-I predicted that the association between the number of chronic conditions and physician visits would be stronger for people with private insurance than for people without it. Private insurance lowers the cost of seeing a doctor, so insured people with more chronic conditions should find it easier to turn their health needs into additional visits, whereas people without private insurance may limit their visits even when they have many conditions. I therefore expected a steeper positive slope of chronic conditions for the insured group.
+I predicted that the association between the number of chronic conditions and physician visits would be stronger for people with private insurance than for people without it. Private insurance lowers the cost of seeing a doctor, so insured people with more chronic conditions should find it easier to make additional visits for their health needs, whereas people without private insurance may limit their visits even when they have many conditions. I therefore expected a steeper positive slope of chronic conditions for the insured group.
 
 ## Fit the interaction model
 
@@ -736,3 +736,86 @@ simple_contrasts |>
              estimate = "Log contrast", z.ratio = "z", p.value = "p") |>
   tab_source_note("Contrasts are no insurance minus insurance. Tests are computed on the log scale.")
 ```
+
+## Interpreting the interaction
+
+```{r}
+#| label: interaction-values
+
+# Helpers to pull values from the probing results
+slope_val <- function(group, column) slopes_sum[slopes_sum$insurance == group, ][[column]]
+sef_val <- function(level, column) simple_contrasts[simple_contrasts$chronic_level == level, ][[column]]
+```
+
+There is little evidence that the association between the number of chronic conditions and physician visits differs by private insurance. The likelihood-ratio test was not significant (χ²(`r int_df`) = `r round(int_chisq, 2)`, p `r fmt_p(int_p)`), and the simple slopes were very similar: each additional chronic condition was associated with an increase of `r no0(slope_val("no", "chronic.trend"), 2)` in the log expected count for people without private insurance and `r no0(slope_val("yes", "chronic.trend"), 2)` for people with it, and both slopes were significantly different from zero. The difference between the slopes was small (`r no0(slopes_pairs$estimate, 3)`, p `r fmt_p(slopes_pairs$p.value)`), and it was in the opposite direction from my prediction, because the slope was slightly smaller, not larger, for insured people. The probing of the simple effects adds a separate piece of information. People without private insurance were expected to make fewer visits than people with it at low, average, and high numbers of chronic conditions (log contrasts of `r no0(sef_val("-1 SD", "estimate"), 2)`, `r no0(sef_val("Mean", "estimate"), 2)`, and `r no0(sef_val("+1 SD", "estimate"), 2)`, all p < .05), so insurance was associated with more visits at every level. That is a difference in level, however, and not a difference in slope, so it does not contradict the non-significant interaction. I am fairly confident that the interaction is small or absent: the omnibus test and the slope comparison agree, and the 95% confidence interval for the difference in slopes, [`r no0(int_row$conf.low, 2)`, `r no0(int_row$conf.high, 2)`], is narrow enough to rule out a large difference, although it cannot rule out a small one.
+
+# 8. Coefficients of the selected model
+
+```{r}
+#| label: extract-coefficients
+
+# Coefficients (log scale) and 95% CIs from the selected hurdle model, count and zero parts
+coef_results <- tidy(selected_final, effects = "fixed", conf.int = TRUE, conf.level = 0.95) |>
+  filter(component %in% c("cond", "zi"))
+
+# Helper: pull one value for one term in one part of the model
+coef_val <- function(component, term, column) {
+  coef_results[coef_results$component == component & coef_results$term == term, ][[column]]
+}
+
+# Readable predictor names
+term_labels <- c(
+  "(Intercept)" = "Intercept",
+  "chronic" = "Chronic conditions (per condition)",
+  "healthpoor" = "Health: poor (vs. average)",
+  "healthexcellent" = "Health: excellent (vs. average)",
+  "genderfemale" = "Gender: female (vs. male)",
+  "school" = "Education (per year)",
+  "insuranceyes" = "Private insurance: yes (vs. no)")
+
+coef_table <- coef_results |>
+  mutate(
+    Predictor = unname(term_labels[term]),
+    Part = ifelse(component == "cond",
+                  "Count part (log expected visits among people with at least one visit)",
+                  "Zero part (log-odds of having zero visits)")) |>
+  select(Part, Predictor, estimate, std.error, conf.low, conf.high, p.value)
+```
+
+```{r}
+#| label: tbl-coefficients
+#| tbl-cap: "Coefficients from the hurdle negative binomial model (log scale)"
+
+coef_table |>
+  gt(groupname_col = "Part") |>
+  fmt_number(columns = c(estimate, std.error, conf.low, conf.high), decimals = 3) |>
+  fmt(columns = p.value, fns = function(x) ifelse(x < .001, "< .001", sprintf("%.3f", x))) |>
+  tab_spanner(label = "95% CI", columns = c(conf.low, conf.high)) |>
+  cols_label(estimate = "b", std.error = "SE", conf.low = "Lower", conf.high = "Upper", p.value = "p")
+```
+
+# 9. Results
+
+```{r}
+#| label: report-helpers
+
+# Helper: format one coefficient as "b = .15, 95% CI [.12, .17], p < .001" for the text
+rep_coef <- function(component, term, digits = 2) {
+  paste0("*b* = ", no0(coef_val(component, term, "estimate"), digits),
+         ", 95% CI [", no0(coef_val(component, term, "conf.low"), digits), ", ",
+         no0(coef_val(component, term, "conf.high"), digits), "], *p* ",
+         fmt_p(coef_val(component, term, "p.value")))
+}
+```
+
+The outcome, the number of physician office visits, was overdispersed (*M* = `r round(visits_summary$mean, 2)`, *s*² = `r round(visits_summary$variance, 2)`), and `r round(visits_summary$p_zero * 100, 1)`% of people had no visits. DHARMa residual checks on the full Poisson model showed significant overdispersion (dispersion ratio = `r round(disp_pois$statistic, 2)`, *p* `r fmt_p(disp_pois$p.value)`) and excess zeros (observed/expected = `r round(zi_pois$statistic, 2)`, *p* `r fmt_p(zi_pois$p.value)`). A negative binomial model fit significantly better, χ²(`r nb_df`) = `r format(round(nb_chisq, 1), big.mark = ",", nsmall = 1)`, *p* `r fmt_p(nb_p)`, and removed the overdispersion (ratio = `r round(disp_nb$statistic, 2)`, *p* `r fmt_p(disp_nb$p.value)`), but it still underpredicted the zeros (observed/expected = `r sprintf("%.2f", zi_nb$statistic)`, *p* `r fmt_p(zi_nb$p.value)`), so a separate model for the zeros was needed. A hurdle negative binomial model had the lowest AIC and BIC of the models considered and reproduced the observed zeros (observed/expected = `r sprintf("%.2f", zi_hurdle$statistic)`, *p* `r ifelse(zi_hurdle$p.value > .999, "> .999", fmt_p(zi_hurdle$p.value))`), so it was selected as the final model.
+
+Coefficients are on the log scale. Holding the other predictors constant, the count part of the hurdle model, which describes the number of visits among people who made at least one visit, showed that each additional chronic condition was associated with more visits (`r rep_coef("cond", "chronic")`). Compared with people in average health, both people in poor health (`r rep_coef("cond", "healthpoor")`) and people in excellent health (`r rep_coef("cond", "healthexcellent")`) had fewer expected visits. More years of education (`r rep_coef("cond", "school", 3)`) and having private insurance (`r rep_coef("cond", "insuranceyes")`) were associated with more visits, whereas gender was not significantly associated with the number of visits (female vs. male: `r rep_coef("cond", "genderfemale")`). The zero part of the model describes the log-odds of having no visits at all. Holding the other predictors constant, people with more chronic conditions (`r rep_coef("zi", "chronic")`), women (`r rep_coef("zi", "genderfemale")`), people with more education (`r rep_coef("zi", "school", 3)`), and people with private insurance (`r rep_coef("zi", "insuranceyes")`) were less likely to have no visits. Neither poor health (`r rep_coef("zi", "healthpoor")`) nor excellent health (`r rep_coef("zi", "healthexcellent")`) was significantly associated with the odds of having no visits.
+
+Adding a chronic conditions × private insurance interaction to the count part did not significantly improve model fit, χ²(`r int_df`) = `r round(int_chisq, 2)`, *p* `r fmt_p(int_p)`. Simple slopes showed that chronic conditions were significantly associated with more visits both for people without private insurance (*b* = `r no0(slope_val("no", "chronic.trend"), 2)`, 95% CI [`r no0(slope_val("no", "asymp.LCL"), 2)`, `r no0(slope_val("no", "asymp.UCL"), 2)`], *p* `r fmt_p(slope_val("no", "p.value"))`) and for people with it (*b* = `r no0(slope_val("yes", "chronic.trend"), 2)`, 95% CI [`r no0(slope_val("yes", "asymp.LCL"), 2)`, `r no0(slope_val("yes", "asymp.UCL"), 2)`], *p* `r fmt_p(slope_val("yes", "p.value"))`). Simple effects showed that people without private insurance were expected to make fewer visits than people with it at −1 *SD* of chronic conditions (log contrast = `r no0(sef_val("-1 SD", "estimate"), 2)`, *p* `r fmt_p(sef_val("-1 SD", "p.value"))`), at the mean (log contrast = `r no0(sef_val("Mean", "estimate"), 2)`, *p* `r fmt_p(sef_val("Mean", "p.value"))`), and at +1 *SD* (log contrast = `r no0(sef_val("+1 SD", "estimate"), 2)`, *p* `r fmt_p(sef_val("+1 SD", "p.value"))`). Overall, the slope of chronic conditions did not differ by insurance status, but private insurance was associated with more visits at every level of chronic conditions.
+
+# 10. Discussion and limitations
+
+Among these older adults, the number of chronic conditions was the most consistent predictor of physician visits. It was associated with both parts of the hurdle model. Each additional chronic condition was associated with approximately `r round((exp(coef_val("cond", "chronic", "estimate")) - 1) * 100)`% more expected visits among individuals who visited a physician at least once, as well as lower odds of having no visits (OR = `r no0(exp(coef_val("zi", "chronic", "estimate")), 2)`). Adding chronic conditions to the null model also produced a much larger improvement in model fit (χ² = `r format(round(chi[2], 0), big.mark = ",")`) than adding the four remaining predictors together (χ² = `r format(round(chi[3], 0), big.mark = ",")`). This suggests that chronic conditions made an important contribution to explaining physician visits, although these improvements should be interpreted in the context of the order in which predictors were added. Private insurance, education, and gender were also associated with whether individuals visited a physician. Those with private insurance, higher education levels, and women had lower odds of having no visits. In addition, individuals with private insurance or higher education had more visits among those who sought care. The relationship between self-perceived health and physician visits was less straightforward. Although individuals reporting poor health had more visits than those reporting average health in the raw data, both poor and excellent health were associated with fewer visits than average health after accounting for chronic conditions in the count model. This may reflect the overlap between self-perceived health and chronic conditions, which were more common among individuals reporting poor health. Finally, the relationship between chronic conditions and physician visits was similar regardless of insurance status, although insured individuals had more visits across all levels of chronic conditions.
+
+Several limitations should be considered when interpreting these findings. First, the data are observational and come from a single survey of adults aged 66 and older conducted between 1987 and 1988. Therefore, the results describe associations rather than causal relationships and may not generalize to other populations or reflect current healthcare patterns. Second, both physician visits and self-perceived health were self-reported, which may introduce reporting inaccuracies. The model also did not account for other potentially important factors, such as income, additional types of insurance, or hospital stays, which could influence the observed relationships. Another limitation concerns model fit. Although the hurdle model was selected based on AIC, BIC, and the DHARMa diagnostics, a small amount of overdispersion remained (dispersion ratio = `r round(disp_hurdle$statistic, 2)`, *p* `r fmt_p(disp_hurdle$p.value)`). This suggests that some variability was not fully accounted for and could affect the reliability of the standard errors. Also, the ZINB model performed similarly but handles zeros differently, meaning that interpretations of the zero-generating process depend partly on the model selected. Finally, the interaction analysis only examined whether insurance modified the relationship between chronic conditions and the number of visits among individuals who visited a physician. Therefore, it cannot determine whether insurance also influences the relationship between chronic conditions and the likelihood of having any physician visits.
